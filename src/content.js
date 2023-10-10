@@ -1,6 +1,5 @@
 // content.js
 
-// Function to extract video information
 function getVideoInfo() {
   const titleElement = $('#title>h1');
   const videoUrl = window.location.href;
@@ -43,6 +42,7 @@ function extractVideoId(url) {
 }
 
 async function appendComments(videoInfo) {
+  $("#middle-row").empty();
   const commentResponse = await getComments(videoInfo.videoId);
   const commentArr = commentResponse.map(c => {
     snippet = c.snippet.topLevelComment.snippet;
@@ -56,14 +56,19 @@ async function appendComments(videoInfo) {
   commentArr.sort((a, b) => b.likes - a.likes)
   commentArr.forEach(c => {
     $("#middle-row").append("<span>" + c.text + " :: " +c.likes + " </span><br>")
-  })
+  });
+  return commentArr;
 }
 
-// Send the video information to the popup script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.action === 'getVideoInfo') {
     const videoInfo = getVideoInfo();
-    appendComments(videoInfo);
     sendResponse({ videoInfo });
+    const comments = await appendComments(videoInfo);
+    console.log(comments);
+
+    // Comments 들을 append 하고 난 뒤에 notification alert.
+    chrome.runtime.sendMessage({ action: 'showNotification', message: comments.length + ' Comments Appended' });
+
   }
 });
