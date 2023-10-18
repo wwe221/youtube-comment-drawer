@@ -13,21 +13,37 @@ function getVideoInfo() {
   };
   return videoInfo;
 }
+var API_PROCESSING = false;
+const MAX_REQUEST_CNT = 10; // 최대 1000개 가져오기
+const apiKey = apikey;
 
-const apiKey = apiKey;
-async function getComments(videoId) { // youtube data api 를 사용해, video 의 comments 들 load
-  try {
-    let result = [];
-    const apiUrl = `https://www.googleapis.com/youtube/v3/commentThreads`;
-    const apiQuery = `videoId=${videoId}&key=${apiKey}&part=snippet&maxResults=100`;
-    const response = await fetch(apiUrl + "?" + apiQuery);
-    if (!response.ok) {
-      throw new Error('Failed to fetch video details');
+async function getComments(videoId) { // youtube data api 를 사용해, video 의 comments 들 load  
+  let result = [];
+  const apiUrl = `https://www.googleapis.com/youtube/v3/commentThreads`;
+  const apiQuery = `videoId=${videoId}&key=${apiKey}&part=snippet&maxResults=100`;
+  let pageTokenQuery = `&pageToken=`;
+  let pageTokenString = ``;
+  let request_cnt = 0;
+  try {    
+    while (request_cnt++ < MAX_REQUEST_CNT) {
+      API_PROCESSING = true;
+      const response = await fetch(apiUrl + "?" + apiQuery + (pageTokenString.length > 0 ? pageTokenQuery + pageTokenString : ""));
+      pageTokenString = ``;
+      if (!response.ok) {
+        throw new Error('Failed to fetch video details');
+      }
+      const data = await response.json();      
+      result.push(...data.items) 
+      if (data.nextPageToken != null) {
+        pageTokenString = data.nextPageToken;
+      } else {
+        break;
+      }
     }
-    const data = await response.json();
-    result.push(...data.items)
+    API_PROCESSING = false;
     return result;
   } catch (error) {
+    API_PROCESSING = false;
     console.error(error);
     return null;
   }
@@ -61,14 +77,15 @@ async function appendComments(videoInfo) {
 }
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  console.log(message);
   if (message.action === 'getVideoInfo') {
     const videoInfo = getVideoInfo();
     sendResponse({ videoInfo });
-    const comments = await appendComments(videoInfo);
-    console.log(comments);
-
-    // Comments 들을 append 하고 난 뒤에 notification alert.
-    chrome.runtime.sendMessage({ action: 'showNotification', message: comments.length + ' Comments Appended' });
-
+    if (!API_PROCESSING) {
+      const comments = await appendComments(videoInfo);
+      console.log(comments);
+      // Comments 들을 append 하고 난 뒤에 notification alert.
+      chrome.runtime.sendMessage({ action: 'showNotification', message: comments.length + ' Comments Appended' });
+    }
   }
 });
