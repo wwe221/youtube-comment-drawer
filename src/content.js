@@ -59,6 +59,7 @@ function extractVideoId(url) {
 
 async function appendComments(videoInfo) {
   $("#middle-row").empty();
+  $("#comment-container").remove();
   const commentResponse = await getComments(videoInfo.videoId);
   const commentArr = commentResponse.map(c => {
     snippet = c.snippet.topLevelComment.snippet;
@@ -69,10 +70,32 @@ async function appendComments(videoInfo) {
     }    
     return tmp;
   });
+  
   commentArr.sort((a, b) => b.likes - a.likes)
-  commentArr.forEach(c => {
-    $("#middle-row").append("<span>" + c.text + " :: " +c.likes + " </span><br>")
-  });
+  const commentContainer = $('<div id="comment-container">')
+      .addClass('comment-container')
+      .css({
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',});
+  commentArr.forEach((c,idx) => {
+    if (idx >= 4) return;
+    const commentDiv = $('<span>')
+      .addClass('style-scope ytd-comment-renderer')
+      .css({
+        width: '20%',
+        background: 'white',
+        padding: '10px',
+        marginBottom: '10px',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        fontSize: '16px',
+        fontFamily: 'Arial, sans-serif',
+      }).html(c.text + " :👍: " +c.likes);
+      commentContainer.append(commentDiv);
+    });
+  $("#above-the-fold").prepend(commentContainer);
+  
   return commentArr;
 }
 
