@@ -15,7 +15,7 @@ function getVideoInfo() {
 }
 var API_PROCESSING = false;
 const MAX_REQUEST_CNT = 10; // 최대 1000개 가져오기
-const apiKey = apikey;
+const apiKey = apiKey;
 
 async function getComments(videoId) { // youtube data api 를 사용해, video 의 comments 들 load  
   let result = [];
@@ -24,7 +24,7 @@ async function getComments(videoId) { // youtube data api 를 사용해, video �
   let pageTokenQuery = `&pageToken=`;
   let pageTokenString = ``;
   let request_cnt = 0;
-  try {    
+  try {
     while (request_cnt++ < MAX_REQUEST_CNT) {
       API_PROCESSING = true;
       const response = await fetch(apiUrl + "?" + apiQuery + (pageTokenString.length > 0 ? pageTokenQuery + pageTokenString : ""));
@@ -57,21 +57,32 @@ function extractVideoId(url) {
   }
 }
 
+async function getCommentsArray(videoId) {
+  const result_from_indexedDB = await get_from_indexedDB(videoId);
+  if (result_from_indexedDB) {
+    console.log("get comments from indexedDB", result_from_indexedDB)
+    return result_from_indexedDB.comments
+  } else {
+    const commentResponse = await getComments(videoId);
+    const commentArr = commentResponse.map(c => {
+      snippet = c.snippet.topLevelComment.snippet;
+      let tmp = {
+        text: snippet.textDisplay,
+        writer: snippet.authorDisplayName,
+        likes: snippet.likeCount
+      }    
+      return tmp;
+    });
+    commentArr.sort((a, b) => b.likes - a.likes)
+    add_to_indexed({videoId:videoId, comments: commentArr})
+    return commentArr;
+  }
+}
+
 async function appendComments(videoInfo) {
   $("#middle-row").empty();
-  $("#comment-container").remove();
-  const commentResponse = await getComments(videoInfo.videoId);
-  const commentArr = commentResponse.map(c => {
-    snippet = c.snippet.topLevelComment.snippet;
-    let tmp = {
-      text: snippet.textDisplay,
-      writer: snippet.authorDisplayName,
-      likes: snippet.likeCount
-    }    
-    return tmp;
-  });
-  
-  commentArr.sort((a, b) => b.likes - a.likes)
+  $("#comment-container").remove();  
+  const commentArr = await getCommentsArray(videoInfo.videoId);  
   const commentContainer = $('<div id="comment-container">')
       .addClass('comment-container')
       .css({
@@ -84,7 +95,9 @@ async function appendComments(videoInfo) {
       .addClass('style-scope ytd-comment-renderer')
       .css({
         width: '20%',
-        background: 'white',
+        height: '20%',
+        overflow: 'hidden',
+        background: 'gray',
         padding: '10px',
         marginBottom: '10px',
         border: '1px solid #ccc',
