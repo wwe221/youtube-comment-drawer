@@ -1,4 +1,6 @@
-// content.js
+var API_PROCESSING = false;
+const MAX_REQUEST_CNT = 10; // 최대 1000개 가져오기
+const apiKey = apiKey;
 
 function getVideoInfo() {
   const titleElement = $('#title>h1');
@@ -13,9 +15,6 @@ function getVideoInfo() {
   };
   return videoInfo;
 }
-var API_PROCESSING = false;
-const MAX_REQUEST_CNT = 10; // 최대 1000개 가져오기
-const apiKey = apiKey;
 
 async function getComments(videoId) { // youtube data api 를 사용해, video 의 comments 들 load  
   let result = [];
@@ -32,8 +31,8 @@ async function getComments(videoId) { // youtube data api 를 사용해, video �
       if (!response.ok) {
         throw new Error('Failed to fetch video details');
       }
-      const data = await response.json();      
-      result.push(...data.items) 
+      const data = await response.json();
+      result.push(...data.items)
       if (data.nextPageToken != null) {
         pageTokenString = data.nextPageToken;
       } else {
@@ -59,6 +58,7 @@ function extractVideoId(url) {
 
 async function getCommentsArray(videoId) {
   const result_from_indexedDB = await get_from_indexedDB(videoId);
+  const timeTableComments = [];
   if (result_from_indexedDB) {
     console.log("get comments from indexedDB", result_from_indexedDB)
     return result_from_indexedDB.comments
@@ -70,26 +70,28 @@ async function getCommentsArray(videoId) {
         text: snippet.textDisplay,
         writer: snippet.authorDisplayName,
         likes: snippet.likeCount
-      }    
+      }
+      timeTableComments.push(extractAnchorTags(videoId, tmp.text));
       return tmp;
     });
     commentArr.sort((a, b) => b.likes - a.likes)
-    add_to_indexed({videoId:videoId, comments: commentArr})
+    add_to_indexed({ videoId: videoId, comments: commentArr, timeTableComments: timeTableComments})
     return commentArr;
   }
 }
 
 async function appendComments(videoInfo) {
   $("#middle-row").empty();
-  $("#comment-container").remove();  
-  const commentArr = await getCommentsArray(videoInfo.videoId);  
+  $("#comment-container").remove();
+  const commentArr = await getCommentsArray(videoInfo.videoId);
   const commentContainer = $('<div id="comment-container">')
-      .addClass('comment-container')
-      .css({
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',});
-  commentArr.forEach((c,idx) => {
+    .addClass('comment-container')
+    .css({
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    });
+  commentArr.forEach((c, idx) => {
     if (idx >= 4) return;
     const commentDiv = $('<span>')
       .addClass('style-scope ytd-comment-renderer')
@@ -104,11 +106,11 @@ async function appendComments(videoInfo) {
         borderRadius: '4px',
         fontSize: '16px',
         fontFamily: 'Arial, sans-serif',
-      }).html(c.text + " :👍: " +c.likes);
-      commentContainer.append(commentDiv);
-    });
+      }).html(c.text + " :👍: " + c.likes);
+    commentContainer.append(commentDiv);
+  });
   $("#above-the-fold").prepend(commentContainer);
-  
+
   return commentArr;
 }
 
@@ -125,3 +127,15 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     }
   }
 });
+
+// 텍스트에서 <a> 시간 태그 추출
+function extractAnchorTags(videoId, text) {
+  if (text.indexOf(videoId) > 0) {
+    const regex = /<a(?:.|\n)*?<\/a>/g;
+    const matches = text.match(regex);
+
+    if (matches) {
+      return {times: matches, text: text};
+    }
+  }
+}

@@ -26,7 +26,7 @@ function add_to_indexed(item) {
         ycommIndexedDB.transaction("ycomm", "readwrite").objectStore("ycomm").add(item);
 }
 
-function get_from_inexedDB(videoId) {
+function get_from_indexedDB(videoId) {
     if (ycommIndexedDB != null)
         return new Promise((resolve, reject) => {
             let result;
