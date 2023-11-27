@@ -1,6 +1,6 @@
 var API_PROCESSING = false;
 const MAX_REQUEST_CNT = 10; // 최대 1000개 가져오기
-const apiKey = apiKey;
+const apiKey = apikey;
 
 function getVideoInfo() {
   const titleElement = $('#title>h1');
@@ -71,7 +71,7 @@ async function getCommentsArray(videoId) {
         writer: snippet.authorDisplayName,
         likes: snippet.likeCount
       }
-      timeTableComments.push(extractAnchorTags(videoId, tmp.text));
+      extractAnchorTags(videoId, tmp, timeTableComments);
       return tmp;
     });
     commentArr.sort((a, b) => b.likes - a.likes)
@@ -129,13 +129,38 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 });
 
 // 텍스트에서 <a> 시간 태그 추출
-function extractAnchorTags(videoId, text) {
-  if (text.indexOf(videoId) > 0) {
+function extractAnchorTags(videoId, comment, timeTableCommentArray) {
+  if (comment.text.indexOf(videoId) > 0) {
     const regex = /<a(?:.|\n)*?<\/a>/g;
-    const matches = text.match(regex);
+    const matches = comment.text.match(regex);
 
     if (matches) {
-      return {times: matches, text: text};
+      const times = [];
+      matches.forEach(m => {
+        times.push($(m).text());
+      });
+      timeTableCommentArray.push({times: times, comment: comment});
     }
   }
+}
+
+// YouTube player 에서 재생중인 시간을 return
+function getPlayingTime() {
+  $(".video-stream").ontimeupdate = function on() { // 플렝이어의 시간이 변경될 때 마다 event
+    console.log(this.currentTime)
+  };
+  let time = $(".video-stream").currentTime
+  var sec_num = parseInt(time, 10);
+  var hours   = Math.floor(sec_num / 3600);
+  var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+  var seconds = sec_num - (hours * 3600) - (minutes * 60);
+  if (hours < 10)
+    hours = '0' + hours;
+  if (minutes < 10)
+    minutes = '0' + minutes;
+  if (seconds < 10)
+    seconds = '0' + seconds;
+  let current_time = hours + ':' + minutes + ':' + seconds;
+  
+  return current_time;
 }
