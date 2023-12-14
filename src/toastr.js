@@ -474,3 +474,21 @@
         window.toastr = factory(window.jQuery);
     }
 }));
+
+toastr.options = {
+    "closeButton": true,
+    "debug": false,
+    "newestOnTop": true,
+    "progressBar": true,
+    "positionClass": "toast-top-left",
+    "preventDuplicates": true,
+    "onclick": null,
+    "showDuration": "50",
+    "hideDuration": "50",
+    "timeOut": "7000",
+    "extendedTimeOut": "0",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+}

@@ -83,7 +83,8 @@ async function getComments(videoId) {
   }
 }
 
-async function appendComments(videoInfo) { // 화면에 best comments 생성
+// 화면에 best comments 생성
+async function appendComments(videoInfo) { 
   $("#middle-row").empty();
   $("#comment-container").remove();
   const commentArr = await getComments(videoInfo.videoId);
@@ -131,86 +132,23 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   }
 });
 
-// 텍스트에서 <a> 시간 태그 추출
-function extractAnchorTags(videoId, comment, timeTableCommentArray) {
-  if (comment.text.indexOf(videoId) > 0) {
-    const regex = /<a(?:.|\n)*?<\/a>/g;
-    const matches = comment.text.match(regex);
-    if (matches) {
-      const times = [];
-      matches.forEach(m => {
-        times.push($(m).text());
-      });
-      timeTableCommentArray.push({ times: times, comment: comment });
-    }
-  }
-}
-
-// YouTube player 에서 재생중인 시간을 return
-function getPlayingTime(time) {
-  var sec_num = parseInt(time, 10);
-  var hours = Math.floor(sec_num / 3600);
-  var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
-  var seconds = sec_num - (hours * 3600) - (minutes * 60);
-  if (minutes < 10)
-    minutes = '0' + minutes;
-  if (seconds < 10)
-    seconds = '0' + seconds;
-  if (hours <= 0) return minutes + ':' + seconds;
-  else return hours + ':' + minutes + ':' + seconds;
-}
-
 // 재생 중 시간에 맞게 toast
 function setToastCheckInterval(assembledComments) {
   player = document.querySelector("video");
+  var lastUpdateTime = -1;
   if (player) {
     player.ontimeupdate = function () {
-      setTimeout(() => { }, 750);
-      const time = getPlayingTime(this.currentTime);
-      if (assembledComments[time]) {
-        console.log(assembledComments[time]);
-        assembledComments[time].forEach(c => {
-          toastr.info(c.comment.text + "<br>:👍:" + c.comment.likes)
-        })
+      var currentTime = Math.floor(player.currentTime);
+      if (currentTime !== lastUpdateTime) {
+        lastUpdateTime = currentTime;
+        const time = getPlayingTime(this.currentTime);
+        if (assembledComments[time]) {
+          console.log(assembledComments[time]);
+          assembledComments[time].forEach(c => {
+            toastr.info(c.comment.text + "<br>:👍:" + c.comment.likes)
+          })
+        }
       }
     }
   }
-}
-
-// 태그가 있는 댓글들을 시간별로 collect
-function collectCommentsgroupBytime(timeTableComments) {
-  if (timeTableComments.length > 0)
-    return timeTableComments.sort((x, y) => {
-      if (x.times[0].localeCompare(y.times[0]) == 0) {
-        return y.comment.likes - x.comment.likes;
-      } else return x.times[0].localeCompare(y.times[0]);
-    }).reduce((acc, obj) => {
-      obj.times.forEach(t => {
-        let key = t;
-        if (!acc[key]) {
-          acc[key] = [];
-        }
-        acc[key].push(obj);
-      })
-      return acc;
-    });
-  else return {}
-}
-
-toastr.options = {
-  "closeButton": true,
-  "debug": false,
-  "newestOnTop": true,
-  "progressBar": true,
-  "positionClass": "toast-top-left",
-  "preventDuplicates": true,
-  "onclick": null,
-  "showDuration": "50",
-  "hideDuration": "50",
-  "timeOut": "3000",
-  "extendedTimeOut": "0",
-  "showEasing": "swing",
-  "hideEasing": "linear",
-  "showMethod": "fadeIn",
-  "hideMethod": "fadeOut"
 }
