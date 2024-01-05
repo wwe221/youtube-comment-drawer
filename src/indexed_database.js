@@ -9,9 +9,13 @@ function setIndexedDB() {
         }
         request.onupgradeneeded = (e) => {
             let db = e.target.result;
-            let objectStore = db.createObjectStore("ycomm", { keyPath: "videoId" });
-            objectStore.createIndex("comments", "comments", { unique: false })
-            objectStore.transaction.oncomplete = (e) => {
+            let commentsObjectStore = db.createObjectStore("ycomm", { keyPath: "videoId" });
+            commentsObjectStore.createIndex("comments", "comments", { unique: false })
+            commentsObjectStore.transaction.oncomplete = (e) => {
+                console.log("transaction is completed" , e);
+            }
+            let configStore = db.createObjectStore("config", { keyPath: "key" });            
+            configStore.transaction.oncomplete = (e) => {
                 console.log("transaction is completed" , e);
             }
         }
@@ -21,14 +25,21 @@ function setIndexedDB() {
 }
 setIndexedDB();
 
-function add_to_indexed(item) {
+function store_comment_to_indexed(item) {
     if (ycommIndexedDB != null)
         ycommIndexedDB.transaction("ycomm", "readwrite")
         .objectStore("ycomm")
         .add(item);
 }
 
-function get_from_indexedDB(videoId) {
+function store_config_to_indexed(item) {
+    if (ycommIndexedDB != null)
+        ycommIndexedDB.transaction("config", "readwrite")
+        .objectStore("config")
+        .add(item);
+}
+
+function get_comment_from_indexedDB(videoId) {
     if (ycommIndexedDB != null)
         return new Promise((resolve, reject) => {
             let result;

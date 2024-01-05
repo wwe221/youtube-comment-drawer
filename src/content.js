@@ -38,7 +38,7 @@ async function getCommentsByApi(videoId) { // youtube data api 를 사용해, vi
 
 // IndexdDB 에서 가져오거나, API 를 사용해 댓글을 조회한다.
 async function getComments(videoId) {
-  const result_from_indexedDB = await get_from_indexedDB(videoId);
+  const result_from_indexedDB = await get_comment_from_indexedDB(videoId);
   const timeTableComments = [];
   if (result_from_indexedDB) {
     console.log("get comments from indexedDB", result_from_indexedDB)
@@ -58,7 +58,7 @@ async function getComments(videoId) {
     commentArr.sort((a, b) => b.likes - a.likes)
     const ttc = collectCommentsgroupBytime(timeTableComments);
     const item = { videoId: videoId, comments: commentArr, timeTableComments: timeTableComments, ttc: ttc };
-    add_to_indexed(item)
+    store_comment_to_indexed(item)
     return item;
   }
 }
