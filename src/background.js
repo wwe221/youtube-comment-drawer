@@ -1,3 +1,5 @@
+let flags = { showNotification: true };
+
 function extractVideoId(url) {
   if (url.indexOf("watch?v=")) {
     return url.split("watch?v=")[1].substr(0, 11);
@@ -21,13 +23,20 @@ chrome.webNavigation.onHistoryStateUpdated
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'showNotification') {
-    const options = {
-      type: 'basic',
-      title: 'Comments Appended',
-      message: request.message,
-      iconUrl: 'icon.png',
-    };
-
-    chrome.notifications.create(options);
+    if (flags.showNotification) {
+      const options = {
+        type: 'basic',
+        title: 'Comments Appended',
+        message: request.message,
+        iconUrl: 'icon.png',
+      };
+      chrome.notifications.create(options);
+    }
+  }
+  if (request.action === 'getFlags') {
+    sendResponse(flags);
+  }
+  if (request.action === 'setFlags') {
+    flags = request.flags
   }
 });

@@ -1,24 +1,27 @@
-// popup.js
+let notiSwitch = document.getElementById('noti-switch');
+let switch2 = document.getElementById('switch2');
+let flags = {};
 
-async function updatePopup(videoInfo) {
-    const titleElement = document.getElementById('videoTitle');
-    const urlElement = document.getElementById('videoUrl');
-    const cntElement = document.getElementById('commentCount');
-    titleElement.textContent = videoInfo.title;
-    cntElement.textContent = videoInfo.commentCnt;
-    urlElement.textContent = videoInfo.videoId;
+function setSwitchState(targetSwitch, newState) {
+    targetSwitch.checked = newState;
 }
 
-// Request video information from content.js
-chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-    // status: "complete"
-}, (tabs) => {
-    console.log(tabs);
-    if (tabs[0].url.indexOf("www.youtube.com") > 0)
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'getVideoInfo' }, (response) => {
-            const { videoInfo } = response;
-            updatePopup(videoInfo);
-        });
+chrome.runtime.sendMessage({ action: 'getFlags' }, (response) => {
+    const result = response;
+    flags = result;
+    console.log(flags);
+    setSwitchState(notiSwitch, result.showNotification)
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    notiSwitch.addEventListener('change', function (e) {
+        let value = this.checked
+        flags.showNotification = value;
+        console.log(flags);
+        chrome.runtime.sendMessage({ action: 'setFlags', flags: flags });
+    });
+
+    switch2.addEventListener('change', function () {
+        console.log('Option 2: ' + (switch2.checked ? 'On' : 'Off'));
+    });
 });

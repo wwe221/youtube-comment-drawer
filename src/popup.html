@@ -1,15 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-  <title>YouTube Extension</title>
-  <script src="popup.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Comment Drawer</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      display: block;
+      text-align: center;
+    }
+
+    .switch-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      margin-left:15px;
+    }
+
+    .switch-label {
+      margin-right: 10px;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider-round {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      -webkit-transition: .4s;
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider-round:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      -webkit-transition: .4s;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider-round {
+      background-color: #4CAF50;
+    }
+
+    input:focus+.slider-round {
+      box-shadow: 0 0 1px #4CAF50;
+    }
+
+    input:checked+.slider-round:before {
+      -webkit-transform: translateX(26px);
+      -ms-transform: translateX(26px);
+      transform: translateX(26px);
+    }
+  </style>
 </head>
+
 <body>
-  <h1>YouTube Extension</h1>
-  <p>Title: <span id="videoTitle">Loading...</span></p>
-  <p>URL: <span id="videoUrl">Loading...</span></p>
-  <p>Comments: <span id="commentCount">Loading...</span></p>
-  <h2>Top 5 Comments:</h2>
-  <div id="topComments">Loading...</div>
+  <div class="container">
+    <h1>YouTube Comment Drawer</h1>
+    <div class="switch-container">
+      <label class="switch-label" for="switch1">Notification:</label>
+      <label class="switch">
+        <input type="checkbox" id="noti-switch">
+        <span class="slider-round"></span>
+      </label>
+    </div>
+
+    <div class="switch-container">
+      <label class="switch-label" for="switch2">Option 2:</label>
+      <label class="switch">
+        <input type="checkbox" id="switch2">
+        <span class="slider-round"></span>
+      </label>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
 </body>
 </html>
