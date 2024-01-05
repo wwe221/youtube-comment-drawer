@@ -23,7 +23,9 @@ setIndexedDB();
 
 function add_to_indexed(item) {
     if (ycommIndexedDB != null)
-        ycommIndexedDB.transaction("ycomm", "readwrite").objectStore("ycomm").add(item);
+        ycommIndexedDB.transaction("ycomm", "readwrite")
+        .objectStore("ycomm")
+        .add(item);
 }
 
 function get_from_indexedDB(videoId) {

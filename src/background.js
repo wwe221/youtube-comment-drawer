@@ -1,6 +1,15 @@
+function extractVideoId(url) {
+  if (url.indexOf("watch?v=")) {
+    return url.split("watch?v=")[1].substr(0, 11);
+  } else {
+    return null;
+  }
+}
+
 const sendCreateCommentMessage = (details, event) => {
   if (details.url.includes("youtube.com/watch?")) {
-    chrome.tabs.sendMessage(details.tabId, { action: 'getVideoInfo', test: event });
+    let videoId = extractVideoId(details.url);
+    chrome.tabs.sendMessage(details.tabId, { action: 'getVideoInfo', videoId: videoId });
   }
 }
 
