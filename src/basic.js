@@ -50,17 +50,13 @@ function getPlayingTime(time) {
 function collectCommentsgroupBytime(timeTableComments) {
     if (timeTableComments.length > 0)
         return timeTableComments.sort((x, y) => {
-            if (x.times[0].localeCompare(y.times[0]) == 0) {
-                return y.comment.likes - x.comment.likes;
-            } else return x.times[0].localeCompare(y.times[0]);
+            const timeDiff = x.times[0].localeCompare(y.times[0]);
+            return timeDiff === 0 ? y.comment.likes - x.comment.likes : timeDiff;
         }).reduce((acc, obj) => {
-            obj.times.forEach(t => {
-                let key = t;
-                if (!acc[key]) {
-                    acc[key] = [];
-                }
-                acc[key].push(obj);
-            })
+            obj.times.forEach(time => {
+                acc[time] = acc[time] || [];
+                acc[time].push(obj);
+            });
             return acc;
         });
     else return {}

@@ -1,4 +1,4 @@
-let flags = { showNotification: true };
+let flags = { showNotification: false };
 
 function extractVideoId(url) {
   if (url.indexOf("watch?v=")) {

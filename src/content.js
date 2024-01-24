@@ -10,8 +10,8 @@ async function getCommentsByApi(videoId) { // youtube data api 를 사용해, vi
   let pageTokenString = ``;
   let request_cnt = 0;
   try {
+    API_PROCESSING = true;
     while (request_cnt++ < MAX_REQUEST_CNT) {
-      API_PROCESSING = true;
       const response = await fetch(apiUrl + "?" + apiQuery + (pageTokenString.length > 0 ? pageTokenQuery + pageTokenString : ""));
       pageTokenString = ``;
       if (!response.ok) {
@@ -25,12 +25,12 @@ async function getCommentsByApi(videoId) { // youtube data api 를 사용해, vi
         break;
       }
     }
-    API_PROCESSING = false;
     return result;
   } catch (error) {
-    API_PROCESSING = false;
     console.error(error);
     return null;
+  } finally {
+    API_PROCESSING = false;    
   }
 }
 
@@ -64,11 +64,10 @@ async function getComments(videoId) {
 }
 
 // 화면에 best comments 생성
-async function appendComments(videoId) { 
+async function appendComments(commentArr) { 
   $("#middle-row").empty();
   $("#comment-container").remove();
   $(".comment-container").remove();
-  const commentArr = await getComments(videoId);
   const commentContainer = $('<div id="comment-container">')
     .addClass('comment-container')
     .css({
@@ -95,7 +94,6 @@ async function appendComments(videoId) {
     commentContainer.append(commentDiv);
   });
   $("#above-the-fold").prepend(commentContainer);
-  return commentArr;
 }
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
@@ -104,21 +102,22 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     const videoId = message.videoId;
     sendResponse({ videoId });
     if (!API_PROCESSING) {
-      const result = await appendComments(videoId);      
-      setToastCheckInterval(result.ttc);
+      const comments = await getComments(videoId);
+      appendComments(comments);
+      setToastCheckInterval(comments.ttc);
       // Comments 들을 append 하고 난 뒤에 notification alert.
-      chrome.runtime.sendMessage({ action: 'showNotification', message: result.comments.length + ' Comments Appended' });
+      chrome.runtime.sendMessage({ action: 'showNotification', message: comments.comments.length + ' Comments Appended' });
     }
   }
 });
 
 // 재생 중 시간에 맞게 toast
 function setToastCheckInterval(assembledComments) {
-  player = document.querySelector("video");
-  var lastUpdateTime = -1;
+  let player = document.querySelector("video");
+  let lastUpdateTime = -1;
   if (player) {
     player.ontimeupdate = function () {
-      var currentTime = Math.floor(player.currentTime);
+      let currentTime = Math.floor(player.currentTime);
       if (currentTime !== lastUpdateTime) {
         lastUpdateTime = currentTime;
         const time = getPlayingTime(this.currentTime);
